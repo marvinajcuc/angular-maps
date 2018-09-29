@@ -3,6 +3,7 @@ import { Marcador } from '../../classes/marcador.class';
 import {MatSnackBar} from '@angular/material';
 import {MatDialog, MatDialogRef, MAT_DIALOG_DATA} from '@angular/material';
 import { MapaEditarComponent } from './mapa-editar.component';
+import {} from '@types/googlemaps';
 
 @Component({
   selector: 'app-mapa',
@@ -15,7 +16,9 @@ export class MapaComponent implements OnInit {
   textoBoton: String = 'Dibujar';
   marcadores: Marcador[] = [];
   puntos: Marcador[] = [];
+  tempPuntos: google.maps.LatLng[] = [];
   polygon: google.maps.Polygon ;
+  minDist:google.maps.LatLng[]=[];
 
   lat = 14.6103837;
   lng = -90.515654;
@@ -162,13 +165,28 @@ export class MapaComponent implements OnInit {
     }
   }
   getPointAtDistance(polyLine: google.maps.Polyline, distance: number):google.maps.LatLng {
+    //pendiente de implementar
     let currentDist=distance;
     let point1 = polyLine.getPath()[0];
     let point2 = polyLine.getPath()[1];
-    for (int i=0; i < distance; i++) {
+    for (let i=0; i < distance; i++) {
       let middlePoint = google.maps.geometry.spherical.interpolate(point1, point2, 0.5); // midpoint
       
     }
+    return point1;
+  }
+  createTemporalPoints(from: google.maps.LatLng, to: google.maps.LatLng, interval:number){
+    let point1 = from;
+    let point2 = to;
+    let lenght=google.maps.geometry.spherical.computeDistanceBetween(point1,point2);
+    let interpolateFactor = interval/lenght;
+    for (let i=0; i < lenght; i++) {
+      let point = google.maps.geometry.spherical.interpolate(point1, point2, interpolateFactor*i);
+      this.tempPuntos.push(point);
+      // this.marcadores.push(new Marcador(point.lat(),point.lng()));
+    }
+    this.guardarStorage();
+    // this.paths=this.tempPuntos;
   }
   getMiddlePoint(from: google.maps.LatLng, to: google.maps.LatLng) {
     console.log('from:', from.lat, ',' , from.lng);
@@ -176,20 +194,37 @@ export class MapaComponent implements OnInit {
     return google.maps.geometry.spherical.interpolate(from, to, 0.5); // midpoint
   }
   comprobarUbicacion() {
-    this.polygon = new google.maps.Polygon({paths: this.paths});
-      // this.polygon.setPaths(this.paths);
-    const containsLocation = google.maps.geometry.poly.containsLocation(
-        new google.maps.LatLng(this.marcadores[0].lat, this.marcadores[0].lng), this.polygon);
-    console.log('containslocation=', containsLocation);
-    const isLocationOnEdge = google.maps.geometry.poly.isLocationOnEdge(
-        new google.maps.LatLng(this.marcadores[0].lat, this.marcadores[0].lng), this.polygon, 0.002);
-    console.log('islocationonedge=', isLocationOnEdge);
-    console.log('polygon:', this.polygon);
-    const middlePoint= google.maps.geometry.spherical.interpolate(new google.maps.LatLng(this.puntos[0].lat,this.puntos[0].lng), new google.maps.LatLng(this.puntos[1].lat,this.puntos[1].lng), 0.5);
-    //const middlePoint = this.getMiddlePoint(new google.maps.LatLng(this.puntos[0].lat,this.puntos[0].lng), new google.maps.LatLng(this.puntos[1].lat,this.puntos[1].lng));
-    console.log(middlePoint);
-    const nuevoMarcador = new Marcador(middlePoint.lat(), middlePoint.lng());
-    this.marcadores.push(nuevoMarcador);
-    this.guardarStorage();
+    this.tempPuntos=[];
+    for(let i=0;i<this.puntos.length-1;i++){
+      this.createTemporalPoints(new google.maps.LatLng(this.puntos[i].lat, this.puntos[i].lng),new google.maps.LatLng(this.puntos[i+1].lat, this.puntos[i+1].lng),1);
+    }
+    let minDistance=9999999999999;
+    let minDistPoint:google.maps.LatLng;
+    for(let i=0;i<this.tempPuntos.length;i++) {
+      let dist=google.maps.geometry.spherical.computeDistanceBetween(new google.maps.LatLng(this.marcadores[0].lat, this.marcadores[0].lng), this.tempPuntos[i]);
+      if(dist<minDistance){
+        minDistPoint=this.tempPuntos[i];
+        minDistance=dist;
+      }  
+    }
+    this.minDist=[];
+    this.minDist.push(new google.maps.LatLng(this.marcadores[0].lat, this.marcadores[0].lng));
+    this.minDist.push(minDistPoint);
+
+    // this.polygon = new google.maps.Polygon({paths: this.paths});
+    //   // this.polygon.setPaths(this.paths);
+    // const containsLocation = google.maps.geometry.poly.containsLocation(
+    //     new google.maps.LatLng(this.marcadores[0].lat, this.marcadores[0].lng), this.polygon);
+    // console.log('containslocation=', containsLocation);
+    // const isLocationOnEdge = google.maps.geometry.poly.isLocationOnEdge(
+    //     new google.maps.LatLng(this.marcadores[0].lat, this.marcadores[0].lng), this.polygon, 0.002);
+    // console.log('islocationonedge=', isLocationOnEdge);
+    // console.log('polygon:', this.polygon);
+    // const middlePoint= google.maps.geometry.spherical.interpolate(new google.maps.LatLng(this.puntos[0].lat,this.puntos[0].lng), new google.maps.LatLng(this.puntos[1].lat,this.puntos[1].lng), 0.5);
+    // //const middlePoint = this.getMiddlePoint(new google.maps.LatLng(this.puntos[0].lat,this.puntos[0].lng), new google.maps.LatLng(this.puntos[1].lat,this.puntos[1].lng));
+    // console.log(middlePoint);
+    // const nuevoMarcador = new Marcador(middlePoint.lat(), middlePoint.lng());
+    // this.marcadores.push(nuevoMarcador);
+    // this.guardarStorage();
   }
 }

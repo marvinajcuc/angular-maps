@@ -19,7 +19,11 @@
                         </div>
                     </agm-info-window>
                 </agm-marker>
-                <agm-polygon [fillColor]="red" [fillOpacity]="0.5" [paths]="paths"></agm-polygon>
+                <agm-polygon [fillColor]="red" [fillOpacity]="0.5" [paths]="paths" [editable]="drawing"></agm-polygon>
+                <agm-polyline  [strokeColor]="'#2196f3'">
+                    <agm-polyline-point *ngFor="let point of minDist" [latitude]="point.lat()" [longitude]="point.lng()">
+                    </agm-polyline-point>
+                </agm-polyline>
             </agm-map>
         </mat-card-content>
     </mat-card>
