@@ -53,7 +53,12 @@ export class MapaComponent implements OnInit {
     if (this.marcadores.length === 2) {
       const mark1 = new google.maps.LatLng(this.marcadores[0].lat, this.marcadores[0].lng);
       const mark2 = new google.maps.LatLng(this.marcadores[1].lat, this.marcadores[1].lng);
-      const  distanceInKm = google.maps.geometry.spherical.computeDistanceBetween(mark1, mark2) / 1000;
+      let  distanceInKm = google.maps.geometry.spherical.computeDistanceBetween(mark1, mark2) / 1000;
+      for (let i = 0; i < 5000; i++) {
+        distanceInKm = google.maps.geometry.spherical.computeDistanceBetween(mark1, mark2) / 1000;
+        console.log('distanceinkm',distanceInKm);
+      }
+
       console.log('distance in km:' , distanceInKm);
     }
     this.drawPolygon();
