@@ -7,7 +7,11 @@
         <button (click)="comprobarUbicacion()" mat-raised-button color="primary">Comprobar punto</button>
         <mat-card-content>
             <agm-map (mapClick)="agregarMarcador( $event )" [latitude]="lat" [longitude]="lng" [zoom]="15">
-                <agm-marker *ngFor="let marcador of marcadores; let i = index;" [latitude]="marcador.lat" [longitude]="marcador.lng">
+                <agm-marker *ngFor="let marcador of marcadores; let i = index;" [latitude]="marcador.lat" [longitude]="marcador.lng" [label]="{
+                    color: '#000000',
+                    fontWeight: 'bold',
+                    text: 'texto'
+                }">
                     <agm-info-window>
                         <strong> {{marcador.titulo}} </strong>
                         <p>
@@ -20,10 +24,14 @@
                     </agm-info-window>
                 </agm-marker>
                 <agm-polygon [fillColor]="red" [fillOpacity]="0.5" [paths]="paths" [editable]="drawing"></agm-polygon>
-                <agm-polyline  [strokeColor]="'#2196f3'">
+                <agm-polyline [strokeColor]="'#2196f3'">
                     <agm-polyline-point *ngFor="let point of minDist" [latitude]="point.lat()" [longitude]="point.lng()">
                     </agm-polyline-point>
+                    <ng-template>
+                        txto
+                    </ng-template>
                 </agm-polyline>
+                <agm-polygon [fillColor]="red" [fillOpacity]="0.5" [paths]="tempPuntos" [editable]="drawing"></agm-polygon>
             </agm-map>
         </mat-card-content>
     </mat-card>
