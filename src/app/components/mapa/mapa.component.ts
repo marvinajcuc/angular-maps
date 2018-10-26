@@ -3,7 +3,7 @@ import { Marcador } from '../../classes/marcador.class';
 import {MatSnackBar} from '@angular/material';
 import {MatDialog, MatDialogRef, MAT_DIALOG_DATA} from '@angular/material';
 import { MapaEditarComponent } from './mapa-editar.component';
-import {} from '@types/googlemaps';
+ import {} from '@types/googlemaps';
 
 @Component({
   selector: 'app-mapa',
@@ -19,7 +19,8 @@ export class MapaComponent implements OnInit {
   tempPuntos: google.maps.LatLng[] = [];
   polygon: google.maps.Polygon ;
   minDist:google.maps.LatLng[]=[];
-
+  minDistance:number;
+  tipoMapa='satellite';
   lat = 14.6103837;
   lng = -90.515654;
 
@@ -43,6 +44,8 @@ export class MapaComponent implements OnInit {
   ngOnInit() {
   }
   agregarMarcador(evento) {
+    if(this.marcadores.length>0)
+      return;
     console.log('evento=', evento);
     const coords: { lat: number, lng: number} = evento.coords;
     const nuevoMarcador = new Marcador(coords.lat, coords.lng);
@@ -56,7 +59,12 @@ export class MapaComponent implements OnInit {
     if (this.marcadores.length === 2) {
       const mark1 = new google.maps.LatLng(this.marcadores[0].lat, this.marcadores[0].lng);
       const mark2 = new google.maps.LatLng(this.marcadores[1].lat, this.marcadores[1].lng);
-      const  distanceInKm = google.maps.geometry.spherical.computeDistanceBetween(mark1, mark2) / 1000;
+      let  distanceInKm = google.maps.geometry.spherical.computeDistanceBetween(mark1, mark2) / 1000;
+      for (let i = 0; i < 5000; i++) {
+        distanceInKm = google.maps.geometry.spherical.computeDistanceBetween(mark1, mark2) / 1000;
+        console.log('distanceinkm',distanceInKm);
+      }
+
       console.log('distance in km:' , distanceInKm);
     }
     this.drawPolygon();
@@ -116,6 +124,7 @@ export class MapaComponent implements OnInit {
     this.guardarStorage();
     this.snackBar.open('Marcador borrado', 'Cerrar', { duration: 3000});
     this.drawPolygon();
+    this.minDist=[];
     //this.drawPolyline();
   }
   editarMarcador(marcador: Marcador) {
@@ -174,9 +183,15 @@ export class MapaComponent implements OnInit {
     let point1 = from;
     let point2 = to;
     let lenght=google.maps.geometry.spherical.computeDistanceBetween(point1,point2);
+    if(interval>=lenght){
+      console.log('int>=lenght:',interval,'>=',lenght);
+      return;
+    }
     let interpolateFactor = interval/lenght;
+    console.log('interpolatefactor: ',interpolateFactor);
     for (let i=0; i < lenght; i++) {
       let point = google.maps.geometry.spherical.interpolate(point1, point2, interpolateFactor*i);
+      console.log('interpolateFactor*i: ',interpolateFactor*i);
       this.tempPuntos.push(point);
       // this.marcadores.push(new Marcador(point.lat(),point.lng()));
     }
@@ -193,19 +208,38 @@ export class MapaComponent implements OnInit {
     for(let i=0;i<this.puntos.length-1;i++){
       this.createTemporalPoints(new google.maps.LatLng(this.puntos[i].lat, this.puntos[i].lng),new google.maps.LatLng(this.puntos[i+1].lat, this.puntos[i+1].lng),1);
     }
+    this.createTemporalPoints(new google.maps.LatLng(this.puntos[this.puntos.length-1].lat, this.puntos[this.puntos.length-1].lng),new google.maps.LatLng(this.puntos[0].lat, this.puntos[0].lng),1);
+    console.log('tempuntos.lenght:',this.tempPuntos.length);
+    console.log('tempuntos:',this.tempPuntos);
     let minDistance=9999999999999;
+    let subMinDist = minDistance;
     let minDistPoint:google.maps.LatLng;
     for(let i=0;i<this.tempPuntos.length;i++) {
       let dist=google.maps.geometry.spherical.computeDistanceBetween(new google.maps.LatLng(this.marcadores[0].lat, this.marcadores[0].lng), this.tempPuntos[i]);
       if(dist<minDistance){
         minDistPoint=this.tempPuntos[i];
+        subMinDist = minDistance;
         minDistance=dist;
       }  
+      console.log('dist ', i , ': ' ,dist);
+    }
+    if(this.tempPuntos.length<this.paths.length){
+      for(let i=0;i<this.paths.length;i++) {
+        let temPoint=new google.maps.LatLng(this.paths[i].lat,this.paths[i].lng);
+        let dist=google.maps.geometry.spherical.computeDistanceBetween(new google.maps.LatLng(this.marcadores[0].lat, this.marcadores[0].lng),temPoint );
+        if(dist<minDistance){
+          minDistPoint=temPoint;
+          subMinDist = minDistance;
+          minDistance=dist;
+        }  
+      }
     }
     this.minDist=[];
     this.minDist.push(new google.maps.LatLng(this.marcadores[0].lat, this.marcadores[0].lng));
     this.minDist.push(minDistPoint);
-
+    
+    this.marcadores[0].minDistance=parseFloat((Math.round(minDistance * 100) / 100).toString()).toFixed(2).toString()+' m';
+    console.log('mindistance: ',minDistance,', submindist: ',subMinDist);
     // this.polygon = new google.maps.Polygon({paths: this.paths});
     //   // this.polygon.setPaths(this.paths);
     // const containsLocation = google.maps.geometry.poly.containsLocation(
@@ -221,5 +255,11 @@ export class MapaComponent implements OnInit {
     // const nuevoMarcador = new Marcador(middlePoint.lat(), middlePoint.lng());
     // this.marcadores.push(nuevoMarcador);
     // this.guardarStorage();
+  }
+  cambiarTipoMapa() {
+    if(this.tipoMapa==='satellite')
+      this.tipoMapa='roadmap';
+    else
+      this.tipoMapa='satellite';
   }
 }
