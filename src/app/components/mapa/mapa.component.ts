@@ -19,7 +19,8 @@ export class MapaComponent implements OnInit {
   tempPuntos: google.maps.LatLng[] = [];
   polygon: google.maps.Polygon ;
   minDist:google.maps.LatLng[]=[];
-
+  minDistance:number;
+  tipoMapa='satellite';
   lat = 14.6103837;
   lng = -90.515654;
 
@@ -43,6 +44,8 @@ export class MapaComponent implements OnInit {
   ngOnInit() {
   }
   agregarMarcador(evento) {
+    if(this.marcadores.length>0)
+      return;
     console.log('evento=', evento);
     const coords: { lat: number, lng: number} = evento.coords;
     const nuevoMarcador = new Marcador(coords.lat, coords.lng);
@@ -121,6 +124,7 @@ export class MapaComponent implements OnInit {
     this.guardarStorage();
     this.snackBar.open('Marcador borrado', 'Cerrar', { duration: 3000});
     this.drawPolygon();
+    this.minDist=[];
     //this.drawPolyline();
   }
   editarMarcador(marcador: Marcador) {
@@ -233,6 +237,8 @@ export class MapaComponent implements OnInit {
     this.minDist=[];
     this.minDist.push(new google.maps.LatLng(this.marcadores[0].lat, this.marcadores[0].lng));
     this.minDist.push(minDistPoint);
+    
+    this.marcadores[0].minDistance=parseFloat((Math.round(minDistance * 100) / 100).toString()).toFixed(2).toString()+' m';
     console.log('mindistance: ',minDistance,', submindist: ',subMinDist);
     // this.polygon = new google.maps.Polygon({paths: this.paths});
     //   // this.polygon.setPaths(this.paths);
@@ -249,5 +255,11 @@ export class MapaComponent implements OnInit {
     // const nuevoMarcador = new Marcador(middlePoint.lat(), middlePoint.lng());
     // this.marcadores.push(nuevoMarcador);
     // this.guardarStorage();
+  }
+  cambiarTipoMapa() {
+    if(this.tipoMapa==='satellite')
+      this.tipoMapa='roadmap';
+    else
+      this.tipoMapa='satellite';
   }
 }
